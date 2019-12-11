@@ -3,19 +3,19 @@ import time
 import threading
 
 def threadReceber():
-    while True:
-        thread = threading.Thread(target=receber, args=())
-        thread.daemon = True
-        thread.start()
-        enviar()
+    thread = threading.Thread(target=receber, args=())
+    thread.daemon = True
+    thread.start()
+    enviar()
 
 def receber():
     try:
         conexao = pika.BlockingConnection(pika.ConnectionParameters(host))
         canal = conexao.channel()
         canal.queue_declare(queue=usuario)
-        canal.basic_consume(queue=usuario, auto_ack=True, on_message_callback=callback)
-        canal.start_consuming()
+        while True:
+            canal.basic_consume(queue=usuario, auto_ack=True, on_message_callback=callback)
+            canal.start_consuming()
         canal.close()
         conexao.close()
     except Exception as exception:
@@ -29,8 +29,9 @@ def enviar():
         conexao = pika.BlockingConnection(pika.ConnectionParameters(host))
         canal = conexao.channel()
         canal.queue_declare(queue=usuario_recebimento)
-        mensagem = usuario + ' disse: ' + input('-> ')
-        canal.basic_publish(exchange='', routing_key=usuario_recebimento, body=mensagem)
+        while True:
+            mensagem = usuario + ' disse: ' + input('-> ')
+            canal.basic_publish(exchange='', routing_key=usuario_recebimento, body=mensagem)
         canal.close()
         conexao.close()
     except Exception:
@@ -45,8 +46,7 @@ def main():
     usuario_recebimento = input('Digite o nome do usuário com quem você quer iniciar a conversa -> ')
     if host == '':
         host = 'localhost'
-    while True:
-        threadReceber()
+    threadReceber()
 
 if __name__== "__main__":
   main()
